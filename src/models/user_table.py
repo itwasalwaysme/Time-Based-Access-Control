@@ -49,7 +49,7 @@ class User(db.Model, UserMixin):
         }
 
     def __validate_login_body(self, data: Dict):
-        if "key" not in data:
+        if "key" not in data or "key" is None:
             return {
                 "error": {
                     "message": "Campos obrigatórios invalidos"
