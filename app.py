@@ -17,13 +17,6 @@ login_manager.login_view = "login"
 def load_user(id):
     return User.query.get(id)
 
-@app.route("/admin/create", methods=['POST'])
-def create_user():
-    data = request.get_json()
-    user = User()
-    create_user = user.create_user(data)
-    return jsonify(create_user), create_user['status_code']
-
 @app.route("/login", methods=['POST'])
 def login():
     data = request.get_json()
@@ -36,6 +29,21 @@ def login():
         return jsonify(user_result), user_result['status_code']
     
     return jsonify(user_result), user_result['status_code']
+
+@app.route("/admin/create", methods=['POST'])
+@login_required
+def create_user():
+    if current_user.role != "admin":
+        return jsonify({"error": {
+            "data": {
+                "message": "Acesso negado"
+            }
+        }}), 403
+    
+    data = request.get_json()
+    user = User()
+    create_user = user.create_user(data)
+    return jsonify(create_user), create_user['status_code']
 
 @app.route("/user/check_session", methods=['POST'])
 @login_required
