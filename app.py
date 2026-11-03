@@ -11,20 +11,21 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
 db.init_app(app)
 
 login_manager = LoginManager(app)
-login_manager.login_view = "login"
+login_manager.login_view = "login_function"
+login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(id):
     return User.query.get(id)
 
 @app.route("/login", methods=['POST'])
-def login():
+def login_function():
     data = request.get_json()
     user_response = User()
     user_result = user_response.user_login(data)
     
     if user_result.get("success"):
-        user = User.query.filter_by(username=user_result['success']['username']).first()
+        user = User.query.filter_by(username=user_result['success']['usuario']).first()
         login_user(user,)
         return jsonify(user_result), user_result['status_code']
     
@@ -33,17 +34,16 @@ def login():
 @app.route("/admin/create", methods=['POST'])
 @login_required
 def create_user():
-    if current_user.role != "admin":
-        return jsonify({"error": {
-            "data": {
-                "message": "Acesso negado"
-            }
-        }}), 403
-    
-    data = request.get_json()
-    user = User()
-    create_user = user.create_user(data)
-    return jsonify(create_user), create_user['status_code']
+    check_role = User()
+    role_result = check_role.verify_role(current_user.id)
+
+    if role_result.get("success"):
+        data = request.get_json()
+        user = User()
+        create_user = user.create_user(data)
+        return jsonify(create_user), create_user['status_code']
+
+    return jsonify(role_result), role_result['status_code']
 
 @app.route("/user/check_session", methods=['POST'])
 @login_required

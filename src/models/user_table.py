@@ -21,7 +21,7 @@ class User(db.Model, UserMixin):
                 "status_code": 403
             }
 
-        if "username" is None or "access_time" is None or "role" is None:
+        if body['username'] is None or body['access_time'] is None or body['role'] is None:
             return {
                 "error": {
                     "message": "Nenhum campo deve ficar vazio",
@@ -49,7 +49,7 @@ class User(db.Model, UserMixin):
         }
 
     def __validate_login_body(self, data: Dict):
-        if "key" not in data or "key" is None:
+        if "key" not in data or data['key'] is None:
             return {
                 "error": {
                     "message": "Campos obrigatórios invalidos"
@@ -60,10 +60,18 @@ class User(db.Model, UserMixin):
         user = User.query.filter_by(key=data['key']).first()
 
         if user:
+            if user.is_active != True:
+                return {
+                    "error": {
+                        "message": "Usuario inativo"
+                    },
+                    "status_code": 401
+                }
+
             return {
                 "success": {
-                    "username": user.username,
-                    "message": "Usuario encontrado"
+                    "message": "Login realizado",
+                    "usuario": user.username
                 },
                 "status_code": 200
             }
@@ -75,6 +83,39 @@ class User(db.Model, UserMixin):
                 },
             },
             "status_code": 400
+        }
+
+    def verify_role(self, id):
+        if not id:
+            return {
+                "errors": {
+                    "data": {
+                        "message": "Id obrigatório"
+                    }
+                },
+                "status_code": 400
+            }
+
+        user = User.query.get(id)
+
+        if user is not None:
+            if user.role != "admin":
+                 return {
+                    "errors": {
+                        "data": {
+                            "message": "Acesso negado!"
+                        }
+                    },
+                    "status_code": 403
+                }
+
+        return {
+            "success": {
+                "data": {
+                    "message": "Admin autorizado"
+                }
+            },
+            "status_code": 200
         }
     
     def create_user(self, data: Dict):
